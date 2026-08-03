@@ -188,7 +188,6 @@ body.anchored .tile.dim:hover{opacity:.75}
   <div class="field"><label>Details</label><textarea id="gMsg" rows="4" placeholder="What should we know?"></textarea></div>
   <div class="field"><label>Evidence link (a source URL)</label><input id="gUrl" placeholder="https://"></div>
   <button class="btn action" onclick="submitGrow()">Submit</button>
-  <button class="btn" onclick="downloadSubs()" style="margin-left:8px">Download submissions</button>
   <div class="note">This build has no server, so submissions are held in this page and can be downloaded as a file for review.</div>
   <div id="gConfirm" style="margin-top:10px;color:var(--action);font-weight:600"></div>
 </div></div>
@@ -422,10 +421,43 @@ function openLegend(){
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function openGrow(){document.getElementById('growModal').classList.add('open');}
 let SUBS=[];
-function submitGrow(){const s={type:document.getElementById('gType').value,org:document.getElementById('gOrg').value,details:document.getElementById('gMsg').value,evidence:document.getElementById('gUrl').value,status:'unverified — pending review'};
-  if(!s.details&&!s.org){document.getElementById('gConfirm').textContent='Add at least an organization or some details.';return;}
-  SUBS.push(s);document.getElementById('gConfirm').textContent='Captured as unverified, pending review. '+SUBS.length+' held.';
-  document.getElementById('gOrg').value='';document.getElementById('gMsg').value='';document.getElementById('gUrl').value='';}
+/* GEE-GROW-PATCH */
+function submitGrow(){
+  const c=document.getElementById('gConfirm');
+  const s={type:document.getElementById('gType').value,
+           org:document.getElementById('gOrg').value,
+           details:document.getElementById('gMsg').value,
+           evidence:document.getElementById('gUrl').value};
+  if(!s.details&&!s.org){c.textContent='Add at least an organization or some details.';return;}
+  const btn=document.querySelector('#growModal .btn.action');
+  if(btn){btn.disabled=true;btn.textContent='Sending...';}
+  c.textContent='Sending...';
+  const body={access_key:'ad5195a8-72e8-4e91-8d91-c0c281a15eb5',
+              subject:'GrowGEE: '+s.type+(s.org?': '+s.org:''),
+              from_name:'GrowGEE',
+              'Submission type':s.type,
+              'Organization':s.org||'(none given)',
+              'Details':s.details||'(none given)',
+              'Evidence link':s.evidence||'(none given)',
+              'Status':'unverified, pending review'};
+  fetch('https://api.web3forms.com/submit',{method:'POST',
+      headers:{'Content-Type':'application/json',Accept:'application/json'},
+      body:JSON.stringify(body)})
+    .then(r=>r.json())
+    .then(d=>{
+      if(d&&d.success){
+        SUBS.push(s);
+        c.textContent='Sent. It is recorded as unverified and pending review. Nothing goes onto the map on its own.';
+        document.getElementById('gOrg').value='';
+        document.getElementById('gMsg').value='';
+        document.getElementById('gUrl').value='';
+      } else {
+        c.textContent='That did not send. Email the details to the address on laurenberkowitz.co instead.';
+      }
+    })
+    .catch(()=>{c.textContent='That did not send. Check your connection and try again.';})
+    .finally(()=>{if(btn){btn.disabled=false;btn.textContent='Submit';}});
+}
 function downloadSubs(){if(!SUBS.length){document.getElementById('gConfirm').textContent='No submissions yet.';return;}
   const blob=new Blob([JSON.stringify(SUBS,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='growgee_submissions.json';a.click();}
 const rowtip=document.createElement('div');rowtip.id='rowtip';document.body.appendChild(rowtip);
