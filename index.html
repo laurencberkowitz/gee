@@ -238,6 +238,45 @@ const RELALIAS={'funds':'funds_research_or_development','sponsors':'funds_or_spo
  'collaborates':'collaborated_on_project','co-authors':'co_authored_with','invests in':'invested_in',
  'licenses':'licensed_from','subsidizes':'subsidizes_access_for','regulates':'governed_or_accredited_by',
  'member of':'governed_or_accredited_by','runs trials with':'collaborates_on_trial'};
+
+/* GEE-RELDEF-PATCH
+   What each connection label means, and what it is not. Written so a reader can tell
+   two adjacent labels apart, which is the whole point of having them. */
+const RELWHAT={
+ 'funds_research_or_development':"Money given as a grant. No equity taken and no financial return expected. Established by a tax filing, a government award record, or the funder's own published announcement. Not the same as investing: the funder does not profit if the work succeeds.",
+ 'invested_in':"Money given in exchange for equity, expecting a financial return. Established by a securities filing or a disclosed funding round. The distinction from funding matters because it tells you whether an interest in the result is philanthropic or financial.",
+ 'co_funds_with':"Two funders backing the same work. Establishes a relationship between the funders, not between either funder and the recipient.",
+ 'sponsors_trial':"The organization legally responsible for a clinical trial. It holds the protocol and answers to the regulator. The strongest trial role.",
+ 'collaborates_on_trial':"Named in the collaborator field of a clinical trial registration. A formal, declared role in designing or running the study. Stronger than co-authorship, and different from hosting a site.",
+ 'hosts_trial_site':"Runs one of the physical locations where a trial recruits and treats participants. Executing someone else's protocol rather than shaping it. The weakest form of trial partnership, and one of the most common relationships on this map.",
+ 'recruits_for_trial':"Brings participants to a trial it does not run. Common for advocacy organizations and patient communities.",
+ 'conducts_intervention':"Delivers the treatment or procedure being studied.",
+ 'collaborated_on_project':"The two organizations appear on the same piece of published work. The weakest evidence on this map, because a paper with a dozen institutions on it puts them all together whether or not they ever spoke. Most connections of this kind are marked proposed rather than cited for that reason.",
+ 'co_authored_with':"The two organizations appear on the same publication. Weak evidence of a working relationship, for the same reason as above.",
+ 'institution_publishes_on':"The organization publishes research on this subject. A statement about its output, not about a relationship with another organization.",
+ 'investigator_affiliated_with':"A named researcher works at this institution.",
+ 'licensed_from':"Rights to a technology or product passed from one organization to the other under a licence. Money and control both move. Established by a filing or an announcement naming both parties.",
+ 'acquired':"One organization bought the other, or bought part of it. The acquired organization may no longer exist independently.",
+ 'subsidizes_access_for':"Pays some or all of a cost so that an individual can obtain testing, treatment or care they could not otherwise afford.",
+ 'covers_testing_for':"Decides whether a test is paid for. Coverage policy rather than clinical opinion determines who actually gets tested, which is why payers sit on this map at all.",
+ 'maintains_registry_for':"Runs a database or registry that others depend on.",
+ 'governed_or_accredited_by':"Operates under the authority of the other organization, which sets standards it must meet.",
+ 'provides_testing_for':"Performs the genetic test itself.",
+ 'provides_genetic_counseling_for':"Delivers the conversation in which a person learns what a result means.",
+ 'supports_population':"Serves a defined group of people directly, through information, navigation or community.",
+ 'develops_drug_for':"Is developing a therapy against this biology.",
+ 'funds_or_sponsors_advocacy':"Gives money to a patient organization. Worth reading carefully, because it tells you who funds the voice of the patient community."
+};
+function relWhat(t){
+  let k=(t||'').toLowerCase().trim().replace(/\s+/g,'_');
+  if(typeof RELALIAS!=='undefined' && RELALIAS[(t||'').toLowerCase().trim()])k=RELALIAS[(t||'').toLowerCase().trim()];
+  return RELWHAT[k]||'';
+}
+function relTip(badge,type,ev){
+  const w=relWhat(type);
+  const e=(typeof evWord==='function')?evWord(ev):'';
+  return (badge?badge+'. ':'')+(w?w+' ':'')+(e?'Evidence: '+e+'.':'');
+}
 function relDef(t){let k=(t||'').toLowerCase().trim().replace(/\s+/g,'_');
  if(RELALIAS[(t||'').toLowerCase().trim()])k=RELALIAS[(t||'').toLowerCase().trim()];
  return RELDEF[k]||{o:(t||'LINK').toUpperCase().replace(/_/g,' '),i:(t||'LINK').toUpperCase().replace(/_/g,' '),g:(t||'Other').replace(/_/g,' ').toLowerCase().replace(/^./,c=>c.toUpperCase())};}
@@ -247,8 +286,8 @@ const REL_IDX={};
 RELS.forEach(r=>{
   if(!r||!r.s||!r.t)return;
   const d=relDef(r.type);
-  (REL_IDX[r.s]=REL_IDX[r.s]||[]).push({other:r.t,badge:d.o,group:d.g,ev:(r.ev||'unknown').toLowerCase(),url:r.url||'',note:r.note||''});
-  (REL_IDX[r.t]=REL_IDX[r.t]||[]).push({other:r.s,badge:d.i,group:d.g,ev:(r.ev||'unknown').toLowerCase(),url:r.url||'',note:r.note||''});
+  (REL_IDX[r.s]=REL_IDX[r.s]||[]).push({other:r.t,badge:d.o,type:r.type,group:d.g,ev:(r.ev||'unknown').toLowerCase(),url:r.url||'',note:r.note||''});
+  (REL_IDX[r.t]=REL_IDX[r.t]||[]).push({other:r.s,badge:d.i,type:r.type,group:d.g,ev:(r.ev||'unknown').toLowerCase(),url:r.url||'',note:r.note||''});
 });
 let ANCHOR=null, evFilter='all';
 function evPasses(e){if(evFilter==='all')return true;if(evFilter==='evidenced')return e==='evidenced';return e==='proposed'||e==='likely';}
@@ -309,7 +348,7 @@ function render(){const map=document.getElementById('map');map.innerHTML='';let 
         let dim=tileVisible(p)?'':'dim',extra='',badge='';
         if(ANCHOR){
           if(p.org===ANCHOR){extra=' anchor';badge='<span class="relb cited">ANCHOR</span>';}
-          else if(AM[p.org]){const e=AM[p.org];extra=' linked';badge=`<span class="relb ${evClass(e.ev)}" title="${evWord(e.ev)}">${e.badge}</span>`;}
+          else if(AM[p.org]){const e=AM[p.org];extra=' linked';badge=`<span class="relb ${evClass(e.ev)}" title="${relTip(e.badge,e.type,e.ev)}">${e.badge}</span>`;}
           else if(!dim){dim='dim';}
         }
         tiles+=`<div class="tile ${p.signal} ${dim}${extra}" onclick="openOrg('${encodeURIComponent(p.org)}')" ondblclick="event.preventDefault();setAnchor('${encodeURIComponent(p.org)}')" title="${p.org} — double-click to anchor">${svg(typeIcon(o.type)||ic)}<span class="nm">${p.org}</span>${fl}${badge}</div>`;});
@@ -370,7 +409,7 @@ function renderPanelBody(name){const o=ORGS[name]||{name};const b=document.getEl
           :c==='proposed'?'<span class="ev" style="background:#FFFDF6;color:#9a7a2e;border:1px dashed #d8bf7e">Proposed</span>'
           :'<span class="ev" style="background:#F2F3F6;color:#8b93a1;border:1px dashed #cfd4dd">Unverified</span>';
         const lk=x.url?`<a class="evlink" href="${x.url}" target="_blank" onclick="event.stopPropagation()">↗ source</a>`:'';
-        return `<div class="reledge" onclick="openOrg('${encodeURIComponent(x.other)}')"><span class="relb ${c}">${x.badge}</span><span class="rn">${x.other}</span>${pill}${lk}</div>`;}).join('');
+        return `<div class="reledge" onclick="openOrg('${encodeURIComponent(x.other)}')"><span class="relb ${c}" title="${relTip(x.badge,x.type,x.ev)}">${x.badge}</span><span class="rn">${x.other}</span>${pill}${lk}</div>`;}).join('');
       return `<div class="relgrp"><h4>${g} (${groups[g].length})</h4>${rows}</div>`;}).join('');
     b.innerHTML=seg+(body||'<div class="phase2">Nothing matches this evidence filter.</div>')+
       `<div class="phase2" style="margin-top:6px"><b>Cited</b> means a named document states this connection: a trial registration field, an author list, or a page on the organization's own site. The link goes to that document.<br><b>Proposed</b> means the connection is inferred rather than stated, for example two organizations appearing on the same large consortium paper.<br>Neither state means verified. Verified requires a person to open the link and confirm it, and no edge here has been through that yet.</div>`;
@@ -414,6 +453,14 @@ function openLegend(){
     <div class="legrow">Double-click any organization to anchor it. The map dims everything it does not touch and badges what it does.</div>
     <div class="legrow"><span class="relb cited">FUNDS</span> Solid badge = cited. A named document states this connection and the link goes to it.</div>
     <div class="legrow"><span class="relb proposed">FUNDS</span> Dashed badge = proposed. Inferred rather than stated, for example co-appearance on a large consortium paper.</div>
+    <div class="sec">What each connection label means</div>
+    ${(function(){
+       const seen={};
+       RELS.forEach(r=>{const d=relDef(r.type);const w=relWhat(r.type);
+         if(!seen[d.o])seen[d.o]={n:0,w:w};seen[d.o].n++;});
+       const keys=Object.keys(seen).sort((a,b)=>seen[b].n-seen[a].n);
+       return keys.map(k=>`<div class="legrow"><span class="relb cited">${k}</span> <b>${seen[k].n}</b> on this map. ${seen[k].w||'No definition recorded yet.'}</div>`).join('');
+    })()}
     <div class="legrow">Neither state means verified. Verified requires a person to open the link and confirm it.</div>
     <div class="legrow">The Coverage tab counts connections tier by tier. A thin tier reads as open space or as a missing connection.</div>
     <div class="sec">Row definitions</div><div class="legrow">Hover any row name on the map to see that row's definition, so you do not have to come here for it.</div>`;
