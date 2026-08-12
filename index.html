@@ -436,14 +436,14 @@ function renderPanelBody(name){const o=ORGS[name]||{name};const b=document.getEl
     b.innerHTML=`${myPl.length>1?`<div class="sec">Appears in ${myPl.length} places</div><div class="places">${placeChips}</div>`:`<div class="sec">Appears in</div><div class="places">${placeChips}</div>`}
       ${(()=>{const rn=(PL.find(p=>p.org===name)||{}).rowName;if(rn!=='Commercial Capital'||!o.orient)return '';return `<div class="sec">Orientation</div><div><span class="fa">${o.orient}</span></div>`;})()}
       <div class="sec">About ${dlab}</div><div>${dtxt}</div>${tw}
-      <div class="sec">Key people</div><div>${val(o.people,'To be curated')}</div>
-      ${(()=>{const pl=(PL.find(p=>p.org===name)||{});if(pl.tier!=='Capital')return '';const rn=pl.rowName;const lbl=rn==='Commercial Capital'?'Notable portfolio':(rn==='Government / Public Capital'?'Notable programs':'Recent giving');return `<div class="sec">${lbl}</div><div>${val(o.giving,'To be curated')}</div>`;})()}
+      <div class="sec">Key people</div><div>${val(o.people,'Not verified')}</div>
+      ${(()=>{const pl=(PL.find(p=>p.org===name)||{});if(pl.tier!=='Capital')return '';const rn=pl.rowName;const lbl=rn==='Commercial Capital'?'Notable portfolio':(rn==='Government / Public Capital'?'Notable programs':'Recent giving');return `<div class="sec">${lbl}</div><div>${val(o.giving,'Not verified')}</div>`;})()}
       ${(()=>{const rn=(PL.find(p=>p.org===name)||{}).rowName;if(rn==='Private and Family Capital'||rn==='Commercial Capital'||rn==='Government / Public Capital'||!o.finances)return '';const lbl=rn==='Public Charity Capital'?'Revenue and efficiency':'Financials';return `<div class="sec">${lbl}</div><div>${o.finances.replace(/\s*\([^)]*verify[^)]*\)\s*/gi,' ').trim()}</div>`;})()}
       <div class="sec">Genes</div><div>${tagChips((tagObjByOrg[name]||{}).g)}</div>
       <div class="sec">Diseases</div><div>${tagChips((tagObjByOrg[name]||{}).d)}</div>
-      <div class="sec">${((PL.find(p=>p.org===name)||{}).tier==='Capital')?'Investment focus':'Focus areas'}</div><div>${o.focus?o.focus.split(';').map(x=>`<span class="fa">${x.trim()}</span>`).join(''):'<span class="unv">To be curated</span>'}</div>
-      <div class="sec">Notable</div><div>${val(o.notable,'To be curated')}</div>
-      ${(()=>{const pl=(PL.find(p=>p.org===name)||{});if(pl.tier!=='Capital')return '';const rn=pl.rowName;const lbl=rn==='Commercial Capital'?'Fund size / AUM':(rn==='Government / Public Capital'?'Annual research budget':'Relative size');const fb=(rn==='Commercial Capital'||rn==='Government / Public Capital')?'To be curated':'Not scored';return `<div class="sec">${lbl}</div><div>${val(o.size,fb)}</div>`;})()}
+      <div class="sec">${((PL.find(p=>p.org===name)||{}).tier==='Capital')?'Investment focus':'Focus areas'}</div><div>${o.focus?o.focus.split(';').map(x=>`<span class="fa">${x.trim()}</span>`).join(''):'<span class="unv">Not verified</span>'}</div>
+      <div class="sec">Notable</div><div>${val(o.notable,'Not verified')}</div>
+      ${(()=>{const pl=(PL.find(p=>p.org===name)||{});if(pl.tier!=='Capital')return '';const rn=pl.rowName;const lbl=rn==='Commercial Capital'?'Fund size / AUM':(rn==='Government / Public Capital'?'Annual research budget':'Relative size');const fb=(rn==='Commercial Capital'||rn==='Government / Public Capital')?'Not verified':'Not scored';return `<div class="sec">${lbl}</div><div>${val(o.size,fb)}</div>`;})()}
       <div class="kv"><div><div class="mini">Founded</div>${val(o.founded,'—')}</div><div><div class="mini">Headquarters</div>${val(o.hq,'—')}</div></div>
       ${o.website?`<a class="web" href="${o.website}" target="_blank">Visit website</a>`:''}
       <div class="phase2" style="margin-top:14px">This profile is unverified. Every fact needs an evidence link before it is marked verified.</div>`;
